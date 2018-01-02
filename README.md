@@ -4,7 +4,9 @@ Just for PoC!
 - Need to tune the ratio of 'L2' and 'GAN' losses of Generator!
 - Need to apply data augmentation..  ( but, just enough to prove the concept! This is all I want )
 
-Used 'facedes' dataset from 'https://phillipi.github.io/pix2pix/', great thanks!
+Used 'facedes' dataset from 'https://github.com/affinelayer/pix2pix-tensorflow', great thanks!
+The above site provides with good and exact example, 
+just simple is mine! 
 
 Do : 
 1. download dataset 
