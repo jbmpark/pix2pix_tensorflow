@@ -10,6 +10,9 @@ import scipy
 
 np.set_printoptions(threshold=np.nan)
 
+
+GPU = '0'   
+
 #################################
 # parameters
 width  = 256
@@ -45,7 +48,7 @@ global_step = tf.Variable(0, trainable=False, name='global_step')
 
 #################################
 # encode block (convolution)
-def enc(in_layer, num_out_tensor, kernel_size=conv_kernel_size, strides=(2,2), padding='same' , use_bn=True, phase=True):
+def enc(in_layer, num_out_tensor, kernel_size=conv_kernel_size, strides=(2,2), padding='same' , use_bn=True, phase=True, relu=True):
     if use_bn:
         use_bias=False
     else: 
@@ -53,7 +56,10 @@ def enc(in_layer, num_out_tensor, kernel_size=conv_kernel_size, strides=(2,2), p
     _layer = tf.layers.conv2d(in_layer, num_out_tensor, kernel_size, strides=strides, padding=padding, activation=None, use_bias=use_bias, kernel_initializer=kernel_init)
     if use_bn:
         _layer = tf.layers.batch_normalization(_layer, training=phase, momentum=bn_momentum, epsilon=bn_eps) 
-    return tf.nn.relu(_layer)
+    if relu:
+        _layer = tf.nn.relu(_layer)
+
+    return _layer
 
 #################################
 # decode block (deconv)
@@ -117,14 +123,14 @@ def D(input_image, Y, is_training, reuse=False):
         l2 = enc(l1, 128, phase=is_training)         #64x64x128
         l3 = enc(l2, 256, phase=is_training)         #32x32x256
         l4 = enc(l3, 512, phase=is_training, strides=(1,1), padding='valid')         #31x31x512
-        l5 = enc(l4, 1,   phase=is_training, strides=(1,1), padding='valid')         #30x30x1
+        l5 = enc(l4, 1,   phase=is_training, strides=(1,1), padding='valid', relu=False)         #30x30x1
        
     return l5
 
 
 #with tf.name_scope('Optimizer'):
 
-with tf.device("/device:GPU:0"):
+with tf.device("/device:GPU:{}".format(GPU)):
     #################################
     # gan network
     G = G(X, PHASE)
@@ -210,7 +216,7 @@ def read_batch(batch_file_list):
 # training
 
 # data 
-batch_size = 32
+batch_size = 16
 train_data_file_list = glob.glob(os.path.join(train_data_dir, '*.jpg'))
 train_num_data = len(train_data_file_list)
 train_num_batch = int(train_num_data/batch_size)
@@ -229,7 +235,8 @@ test_x_recon  = (test_x+1.0)/2.0
 
 
 #session
-sess = tf.Session()
+gpu_options = tf.GPUOptions(allow_growth=True)  # Without this, the process occupies whole area of memory in the all GPUs.
+sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 saver = tf.train.Saver(tf.global_variables())
 ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
 
@@ -307,6 +314,7 @@ for e in range(epoch):
 is_training=False
 summary = sess.run(merged, feed_dict={X:test_x, Y:test_y, PHASE:is_training})
 writer.add_summary(summary, global_step=sess.run(global_step))
+
 
 
 
