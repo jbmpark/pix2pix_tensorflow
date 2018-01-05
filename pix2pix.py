@@ -257,7 +257,6 @@ for e in range(epoch):
         
         print("epoch: %04d"%e, "batch: %05d"%b, "D_loss: {:.04}".format(D_batch_loss),"G_loss: {:.04}".format(G_batch_loss) )
 
-        saver.save(sess, checkpoint_dir+'/dcgan.ckpt', global_step=global_step)
         
         #save input X
         save_input=False
