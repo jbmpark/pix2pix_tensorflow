@@ -140,10 +140,6 @@ with tf.device("/device:GPU:{}".format(GPU)):
     #################################
 
     # train step
-    # D_loss_real = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=D_real, labels=tf.ones_like(D_real)))
-    # D_loss_fake = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=D_fake, labels=tf.zeros_like(D_fake)))
-    # D_loss = D_loss_real + D_loss_fake
-    # G_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=D_fake, labels=tf.ones_like(D_fake)))
     D_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_real, labels=tf.ones_like(D_real)))
     D_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_fake, labels=tf.zeros_like(D_fake)))
     D_loss = D_loss_real + D_loss_fake
@@ -192,8 +188,6 @@ def read_image(file, scale_w, scale_h):
 def read_batch(batch_file_list):
     x = np.empty([0, height, width, channel], dtype='f')
     y = np.empty([0, height, width, channel], dtype='f')
-    # x = np.empty([ height, width, channel], dtype='f')
-    # y = np.empty([ height, width, channel], dtype='f')
 
     for file in batch_file_list:
         y_, x_ = read_image(file , width, height) 
@@ -202,14 +196,10 @@ def read_batch(batch_file_list):
         if not x.size:
             x = x_
             y = y_
-            #print "empty ", np.shape(x_) , np.shape(x)
         else:
             x = np.concatenate([x,x_], axis=0)
             y = np.concatenate([y,y_], axis=0)
-            #print np.shape(x_) , np.shape(x)
-       #print "concat ", np.shape(x_) , np.shape(x)
         
-    #return [read_image(file , width, height) for file in batch_file_list]
     return x, y
 
 #################################
@@ -267,13 +257,6 @@ for e in range(epoch):
         
         print("epoch: %04d"%e, "batch: %05d"%b, "D_loss: {:.04}".format(D_batch_loss),"G_loss: {:.04}".format(G_batch_loss) )
 
-
-        #real = sess.run(D_real, feed_dict={Z:z_input, X:x_input, PHASE:is_training})
-        #print(real)
-
-        #fake = sess.run(G, feed_dict={Z:z_input, PHASE:is_training})
-        #print(np.shape(fake))
-        
         saver.save(sess, checkpoint_dir+'/dcgan.ckpt', global_step=global_step)
         
         #save input X
@@ -299,21 +282,17 @@ for e in range(epoch):
                 ax[0][k].imshow(test_x_recon[k])
                 ax[1][k].set_axis_off()
                 ax[1][k].imshow(samples[k])
-            plt.savefig(sample_dir+'/dcgan_{}'.format(str(e).zfill(3)) + '_{}.png'.format(str(b).zfill(5)), bbox_inches='tight')
+            plt.savefig(sample_dir+'/pix2pix_{}'.format(str(e).zfill(3)) + '_{}.png'.format(str(b).zfill(5)), bbox_inches='tight')
             plt.close(fig)
 
-    saver.save(sess, checkpoint_dir+'/dcgan.ckpt', global_step=global_step)
+    saver.save(sess, checkpoint_dir+'/pix2pix.ckpt', global_step=global_step)
     #tensorboard
-    #is_training=False
-    #summary = sess.run(merged, feed_dict={Z:z_input, X:x_input, PHASE_D:is_training, PHASE_G:is_training})
-    #writer.add_summary(summary, global_step=sess.run(global_step))
+    is_training=False
+    summary = sess.run(merged, feed_dict={X:x_input, Y:y_input, PHASE:is_training})
+    writer.add_summary(summary, global_step=sess.run(global_step))
 
 
 
-#tensorboard
-is_training=False
-summary = sess.run(merged, feed_dict={X:test_x, Y:test_y, PHASE:is_training})
-writer.add_summary(summary, global_step=sess.run(global_step))
 
 
 
